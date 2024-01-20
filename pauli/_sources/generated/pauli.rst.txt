@@ -1,0 +1,32 @@
+﻿pauli
+=====
+
+.. automodule:: pauli
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      I
+      X
+      Y
+      Z
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

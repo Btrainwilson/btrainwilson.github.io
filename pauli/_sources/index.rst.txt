@@ -1,0 +1,353 @@
+.. Palgo documentation master file, created by
+   sphinx-quickstart on Fri Dec 22 15:51:20 2023.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to ``pauli``'s documentation!
+=====================================
+
+
+``pauli`` is a python package for simplifying and manipulating Pauli algebras. For an introduction to Pauli algebras, see `Nielsen and Chuang <https://profmcruz.files.wordpress.com/2017/08/quantum-computation-and-quantum-information-nielsen-chuang.pdf>`_
+
+API
+---
+.. toctree::
+   :maxdepth: 2
+
+   pauli
+
+
+Usage
+=====
+
+Installation
+------------
+
+To use ``pauli``, first install it using ``pip`` from the command line:
+
+.. code-block:: console
+
+
+   $ python -m venv .venv
+   $ source .venv/bin/activate
+   $ (.venv) python -m pip install git+https://github.com/btrainwilson/pauli.git
+
+Or, unzip the package and install it using ``pip`` from the command line:
+
+.. code-block:: console
+
+    $ python -m venv .venv
+    $ source .venv/bin/activate
+    $ (.venv) unzip pauli.zip
+    $ (.venv) cd pauli
+    $ (.venv) python -m pip install -e .
+
+Then, you can use the package either as a command line tool through invoking the ``pauli`` cli command:
+
+.. code-block:: console
+
+   $ (.venv) pauli
+     _____            _ _            _            _               
+    |  __ \          | (_)     /\   | |          | |              
+    | |__) |_ _ _   _| |_     /  \  | | __ _  ___| |__  _ __ __ _ 
+    |  ___/ _` | | | | | |   / /\ \ | |/ _` |/ _ \ '_ \| '__/ _` |
+    | |  | (_| | |_| | | |  / ____ \| | (_| |  __/ |_) | | | (_| |
+    |_|   \__,_|\__,_|_|_| /_/    \_\_|\__, |\___|_.__/|_|  \__,_|
+                                        __/ |                     
+                                        |___/                      
+    ----------------------------------------------------------------
+    Welcome to the Pauli Calculator! Type help or ? to list commands.
+    ----------------------------------------------------------------
+    >>> 2 * XY + 4 * XY
+    6XY
+
+with pipe supports
+
+.. code-block:: console
+
+   $ (.venv) echo "2 * XY + 4 * XY" | pauli
+     6XY
+   $ (.venv) echo "2 * XY + 4 * Y" | pauli > out.log 
+   $ (.venv) cat out.log
+     2XY + 4Y
+
+
+or, as the ``pauli`` python package which can be imported into your python scripts.
+
+
+Examples
+--------
+All of the following examples assume that you have imported ``pauli``:
+
+.. code-block:: python
+
+    import pauli
+
+Single-Qubit Pauli Group Elements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Pauli Group Properties
+^^^^^^^^^^^^^^^^^^^^^^
+
+The Pauli group :math:`\sigma_x = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}
+, \sigma_y = \begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix}, \sigma_z = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}, I = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}` exhibits algebraic properties which are useful in the analysis and implementation of quantum algorithms and error correction techniques.
+
+1. Closure: The product of any two Pauli elements is also a Pauli element :math:`\sigma_i * \sigma_j \in \{\sigma_x, \sigma_y, \sigma_z, I\}`.
+2. Associativity: For any four Pauli elements, the product is associative :math:`(\sigma_i * \sigma_j) * \sigma_k = \sigma_i * (\sigma_j * \sigma_k)`.
+3. Identity Element: The identity element :math:`I` maps each Pauli element to itself. :math:`\sigma_i * I = \sigma_i`
+4. Inverse Element: Each element is its own inverse :math:`\sigma_i * \sigma_i = I`
+
+The ``pauli`` package implements a `PauliElement` class which serves as the algebraic backbone.  
+
+
+Element Initialization
+^^^^^^^^^^^^^^^^^^^^^^
+
+To initialize a ``PauliElement``, pass a valid ``PauliSymbol`` enum to the constructor:
+
+.. code-block:: python
+
+    X = pauli.PauliElement(pauli.PauliSymbol.X)
+    Y = pauli.PauliElement(pauli.PauliSymbol.Y)
+    Z = pauli.PauliElement(pauli.PauliSymbol.Z)
+    I = pauli.PauliElement(pauli.PauliSymbol.I)
+
+Element String Representation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The ``PauliElement`` can be printed as a string using the ``str`` method or the ``pauli_to_string`` function.
+
+.. code-block:: python
+
+    assert pauli.pauli_to_string(X) == "X"
+    assert pauli.pauli_to_string(Y) == "Y"
+    assert str(Z) == "Z"
+    assert str(I) == "I"
+
+Element Multiplication
+^^^^^^^^^^^^^^^^^^^^^^
+
+Likewise, to multiply two elements, use the ``*`` operator or the ``multiply_pauli`` function. Pauli group multiplication is given by 
+
+.. math::
+
+   \sigma_i * \sigma_j = \delta_{ij} I + i \epsilon_{ijk} \sigma_k
+
+where :math:`\epsilon_{ijk}` is the Levi-Civita symbol which computes the permutation sign of {i,j,k}.
+
+.. code-block:: python
+
+   assert pauli.pauli_to_string(X * Y) == "iZ"
+   assert pauli.pauli_to_string(multiply_pauli(Z, Y)) == "-iX"
+
+
+Phase Multiplication
+^^^^^^^^^^^^^^^^^^^^
+
+We can introduce a phase factor :math:`\phi` for each ``PauliElement`` by multiplying the element by a complex number using either the ``*`` operator or the ``multiply_phase`` function,
+
+.. code-block:: python
+
+
+   assert pauli.pauli_to_string(multiply_phase(-1, X)) == "-X"
+   assert pauli.pauli_to_string(-1j * Z) == "-iZ"
+
+Or, we specify phase :math:`\phi` as a parameter of the ``PauliElement`` constructor:
+
+.. code-block:: python
+
+
+   X = pauli.PauliElement(PauliSymbol.X, -1)
+   assert pauli.pauli_to_string(X) == "-X"
+
+Including the phase factor means that the phases of the Pauli group elements are preserved under multiplication: 
+
+.. math::
+
+   \phi_i\sigma_i * \phi_j\sigma_j = \phi_i\phi_j(\delta_{ij} I + i \epsilon_{ijk} \sigma_k).
+
+Which is implemented in the ``*`` and ``multiply_pauli`` function:
+
+.. code-block:: python
+
+   assert pauli.pauli_to_string(4 * X * 5 * Y) == "20iZ"
+   assert pauli.pauli_to_string(multiply_pauli(Z, Y)) == "-iX"
+
+Pauli Algebra
+~~~~~~~~~~~~~
+
+While the standard Pauli group only includes a single qubit, a Pauli algebra is a vector space which uses all ``n``-tensor products of ``n``-qubit Pauli group elements as its basis. A Pauli algebra uses operators ``<+,*>`` over the complex numbers and Pauli group tensors as a basis. 
+
+Let :math:`\sigma_i` be a Pauli group element, and let :math:`\{\sigma_{i_0}, ..., \sigma_{i_n}\}` be a set of ``n`` Pauli group elements. Then, the Pauli algebra is the vector space spanned by the set of all :math:`\sigma_{i_j}`.
+
+
+
+Variables and String Representation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We implement a Pauli algebra using the ``PauliAlgebra`` class. To initialize a ``PauliAlgebra`` vector, we pass a basis string composed of the characters ``I``, ``X``, ``Y``, and ``Z`` to the constructor. Otherwise, a Value Exception is raised.
+
+.. code-block:: python
+
+    e0 = pauli.PauliAlgebra("YI")
+    e1 = pauli.PauliAlgebra("XI")
+
+Each ``PauliAlgebra`` expression can be printed as a string using the ``str`` method or the ``pauli_algebra_to_string`` function. 
+
+.. code-block:: python
+
+    assert str(e0) == "YI"
+    assert pauli.pauli_algebra_to_string(e0) == "YI"
+
+    assert str(e1) == "XI"
+    assert pauli.pauli_algebra_to_string(e1) == "XI"
+
+This will become more interesting as we introduce more operators.
+
+Phase Multiplication
+^^^^^^^^^^^^^^^^^^^^
+
+To introduce a :math:`\phi` factor, multiply the basis vector by a complex number or use the ``multiply_pauli_algebra_by_scalar`` function. 
+
+.. code-block:: python
+
+    e2 = 10.3 * e0 
+    assert str(e2) == "10.3YI"
+
+    e2 = 1j * e0 
+    assert str(e2) == "iYI"
+
+    e2 = pauli.multiply_pauli_algebra_by_scalar(1j, e0)
+    assert str(e2) == "iYI"
+
+
+Algebraic Multiplication
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+To multiply two vectors using the Pauli group multiplication rules, use the ``*`` operator or the ``multiply_pauli_algebra`` function.
+
+.. code-block:: python
+
+    e3 = e1 * e0
+    assert str(e3) == "iZI"
+
+    e3 = pauli.multiply_pauli_algebra(e1, e0) 
+    assert str(e3) == "iZI"
+
+Algebraic Addition
+^^^^^^^^^^^^^^^^^^
+
+To add two terms, use the ``+`` operator or the ``add_pauli_algebra`` function.
+
+.. code-block:: python
+
+    e2 = e1 + e0
+    e3 = e1 * e0 + e1 * e0
+    e4 = pauli.add_pauli_algebra(1j * e1 * e0 , e1 * e0)
+
+    assert str(e2) == "XI + YI"
+    assert str(e3) == "2iZI"
+    assert str(e4) == "(-1 + i)ZI"
+
+Algebraic Simplification
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``simplify`` method is redundant for our symbolic algebra, because the function is called automatically on ``__add__`` and ``__mul__``. However, it can be used to simplify expressions in python.
+
+.. code-block:: python
+
+    e2 = e1 + e0
+    e2.simplify()
+    assert str(e2) == "XI + YI"
+
+    e3 = e1 * e0 + e1 * e0
+    assert str(pauli.simplify(e3)) == "2iZI"
+
+
+
+Pauli Interpreter and Command Line Tool
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Lastly, ``pauli`` comes with a simple interpreter which uses the ``pauli`` library as a backend for pauli algebra evaluation. You can use it to evaluate Pauli expressions through the ``pauli`` package:
+
+.. code-block:: python
+
+    # The interpreter supports +, -, and * operators 
+    test = "5 * X * X + 2 * Y * Y + 3 * Z * Z + 1 * I * I"
+    e = pauli.interpret(test)
+    assert str(e) == "11I"
+
+    # All multiplications must be explicit. I.e., 4(X + Y) is not supported but 4 * (X + Y) is.
+    test = "5 * (XY * 8 * YI) - 4 * (XY * 8 * YI)"
+    e = pauli.interpreter.interpret(test)
+    assert str(e) == "8iZY"
+
+    # Complex numbers are supported using the "j" notation
+    test = "(5 + 1.6j) * X"
+    e = pauli.interpret(test)
+    assert str(e) == "(5 + 1.6i)X"
+
+
+Or, you can pipe it through the command line tool:
+
+.. code-block:: console
+
+   $ (.venv) echo "5 * (X + Y)" | pauli
+     5X + 5Y
+   $ (.venv) echo "5 * (XY * 8 * YI)" | pauli 
+     40iZY
+
+Invoking the command line tool with no arguments will start a custom interpreter:
+
+.. code-block:: console
+
+   $ (.venv) pauli
+   >>> 5 * (X + Y)
+       5X + 5Y
+   >>> 5 * (XY * 8 * YI)
+     40iZY
+   >>> exit
+
+Random Hermitian Matrices
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As a final example, ``pauli`` can generate random Hermitian matrices using the ``generateHermitian`` function. All Pauli matrices are Hermitian. 
+
+``pauli.generateHermitian`` generates a random Hermitian matrix with real and imaginary parts bounded by ``b``:
+
+.. code-block:: python
+
+    for n in range(2, 10):
+        for b in np.linspace(0.001, 10, 10):
+            m = pauli.generateHermitian(n, b)
+            assert np.array_equal(m, m.conj().T)
+            assert np.all(np.abs(np.real(m)) <= b)
+            assert np.all(np.abs(np.imag(m)) <= b)
+
+Pauli Decompositions
+~~~~~~~~~~~~~~~~~~~~
+
+The Pauli matrices form a vector space over all 2 x 2 matrices, so we can decompose an matrix into Pauli operators using ``pauli.pauliDecomp`` and rebuild the original matrix using ``pauli.generateFromPauliDecomp``:
+
+.. code-block:: python
+
+    print("Test 2a: All Reals")
+    for i in range(100):
+        r = np.random.rand(4)
+        m = pauli.generateFromPauliDecomp(r)
+        r2 = pauli.decompToPauli(m)
+        assert np.allclose(r, r2)
+
+    print("Test 2b: Complex")
+    for i in range(100):
+        r = np.random.rand(4) + 1j * np.random.rand(4)
+        m = pauli.generateFromPauliDecomp(r)
+        r2 = pauli.decompToPauli(m)
+        assert np.allclose(r, r2)
+
+    print("Test 2c: Random Dropout")
+    for i in range(100):
+        r = np.random.rand(4) + 1j * np.random.rand(4)
+        r[np.random.randint(4)] = 0
+        m = pauli.generateFromPauliDecomp(r)
+        r2 = pauli.decompToPauli(m)
+        assert np.allclose(r, r2)
+
+

@@ -1,0 +1,7 @@
+pauli
+=====
+
+.. toctree::
+   :maxdepth: 4
+
+   pauli

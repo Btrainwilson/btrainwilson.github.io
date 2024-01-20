@@ -1,0 +1,39 @@
+Modules
+=============
+
+
+Interpret
+------------------------
+
+.. automodule:: pauli.interpreter
+   :members:
+   :undoc-members:
+
+PauliAlgebra 
+-------------------------
+
+.. automodule:: pauli.paulialgebra
+   :members:
+   :undoc-members:
+   :special-members: __add__, __mul__
+
+Decompose
+----------------------
+
+.. automodule:: pauli.decompose
+   :members:
+   :undoc-members:
+
+Generator
+----------------------
+
+.. automodule:: pauli.generator
+   :members:
+   :undoc-members:
+
+Pauli Group Elements
+------------------------
+
+.. automodule:: pauli.pauli
+   :members:
+   :undoc-members:
